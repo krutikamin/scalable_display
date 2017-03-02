@@ -1,0 +1,160 @@
+#!/bin/bash
+
+# Declare variables
+VERTICAL_HEIGHT=0
+HORIZONTAL_LENGTH=0
+RETURN_CODE=0
+REPLY=""
+TEMP=0
+PATH="~/Downloads/scalable_display/"
+GET_DIMENSIONS_PROMPT="Couldn't detect the screen dimensions, please enter manually..."
+
+
+########################## Functions ###########################
+
+error_prompt()
+{
+	echo "Please enter "$1"..."
+}
+
+check_for_integer()
+{
+	TEMP=$1
+	echo $TEMP | grep "[^0-9]" > /dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		# If the grep found something other than 0-9
+		# redirect the output to /dev/null device
+		error_prompt integer
+		eval ${FUNCNAME[1]} # go to calling function
+	else
+		#http://www.linuxnix.com/bash-variable-assignment-command-not-found-error/
+		eval $2=$TEMP
+	fi
+}
+
+check_directory_exist()
+{
+	if [ ! -z "$1" ]; then
+		PATH="$1"
+	fi
+
+	if [ ! -d "$PATH" ]; then
+		`mkdir $PATH`
+	fi
+
+	if [ ! -d "$PATH/installation_files" ]; then
+		`mkdir $PATH/installation_files/`
+	fi
+}
+
+save_screen_resolution()
+{
+	if [ -z "$2" ]; then
+		TEMP=`xdpyinfo | awk '/dimensions/{print $2}'`
+		check_directory_exists $1
+		PATH=$1
+		HORIZONTAL_LENGTH=`echo $TEMP | cut -d 'x' -f 1`
+		echo $HORIZONTAL_LENGTH > $PATH/screen_resolution.txt
+		VERTICAL_HEIGHT=`echo $TEMP | rev | cut -d 'x' -f 1 | rev`
+		echo $VERTICAL_HEIGHT >> $PATH/screen_resolution.txt
+	else
+		HORIZONTAL_LENGTH=$1
+		VERTICAL_HEIGHT=$2
+		echo $HORIZONTAL_LENGTH > screen_resolution.txt
+	fi
+}
+
+get_horizontal_length()
+{
+	echo -ne "Enter horizontal length in pixels: "
+	read
+	REPLY=`echo $REPLY | awk '{print $1}'` # to remove trailing characters after space
+	check_for_integer $REPLY HORIZONTAL_LENGTH
+}
+
+get_vertical_height()
+{
+	echo -ne "Enter vertical height in pixels: "
+	read
+	REPLY=`echo $REPLY | awk '{print $1}'` # to remove trailing characters after space
+	check_for_integer $REPLY VERTICAL_HEIGHT
+}
+
+get_dimensions()
+{
+	get_horizontal_length
+	get_vertical_height
+
+	echo "Horizontal length = $HORIZONTAL_LENGTH"
+	#echo $HORIZONTAL_LENGTH > screen_resolution.txt
+	echo "Vertical height = $VERTICAL_HEIGHT"
+	#echo $VERTICAL_HEIGHT >> screen_resolution.txt
+	save_screen_resolution $HORIZONTAL_LENGTH $VERTICAL_HEIGHT
+}
+
+install_files()
+{
+	echo -ne "Download and install pwlibs and pwmxplayer (yes/no)? "
+	read
+	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+	case $REPLY in
+		yes|y)
+			echo "Downloading files..."
+
+			wget --progress=bar http://dl.piwall.co.uk/pwlibs1_1.1_armhf.deb
+			`mv *.deb ~/Downloads/scalable_display/installation_files/`
+			#echo "Installing downloaded files..."
+			#sudo dpkg -i /home/pi/Downloads/scalable_display/installation_files/pwlibs1_1.1_armhf.deb
+
+			wget --progress=bar http://dl.piwall.co.uk/pwomxplayer_20130815_armhf.deb
+			#`mv pwomxplayer_20130815_armhf.deb ~/Downloads/piwall/installation_files/`
+			`mv *.deb ~/Downloads/scalable_display/installation_files/`
+			#echo "Installing downloaded files..."
+			#sudo dpkg -i /home/pi/Downloads/pwomxplayer_20130815_armhf.deb
+			;;
+		no|n)
+			;;
+	esac
+}
+
+
+
+
+###########################################################
+
+######################### Main ############################
+
+# Get the screen dimensions
+: xdpyinfo | awk '/dimensions/{print $2}'
+RETURN_CODE=$?
+echo "RETURN CODE = $RETURN_CODE"
+if [[ "$RETRUN_CODE" -ne "0" ]]; then
+	echo "$GET_DIMENSIONS_PROMPT"
+	get_dimensions
+else
+	echo -ne "Is your screen resolution"  `xdpyinfo | awk '/dimensions/{print $2}'` "(yes/no)? "
+	read
+	# Convert the user reply to lower case
+	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+	case $REPLY in
+		yes|y)
+			if [ ! -f $PATH/screen_resolution.txt ]
+				save_screen_resolution $PATH
+			else
+				echo "Screen Resoltion file exists, renaming it to old_*"
+				echo ''
+				rename $PATH/screen_resolution.txt $TEMP/old_screen_resolution.txt
+				save_screen_resolution $PATH
+			fi
+			;;
+		no|n)
+			get_dimensions
+			;;
+		*)
+			echo "Sorry, try again."
+			echo
+			;;
+	esac
+fi
+
+install_files
