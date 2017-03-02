@@ -32,7 +32,7 @@ check_for_integer()
 	fi
 }
 
-check_directory_exist()
+check_directory_exists()
 {
 	if [ ! -z "$1" ]; then
 		PATH="$1"
@@ -125,7 +125,7 @@ install_files()
 ######################### Main ############################
 
 # Get the screen dimensions
-: xdpyinfo | awk '/dimensions/{print $2}'
+`xdpyinfo | awk '/dimensions/{print $2}'`
 RETURN_CODE=$?
 echo "RETURN CODE = $RETURN_CODE"
 if [[ "$RETRUN_CODE" -ne "0" ]]; then
@@ -138,10 +138,12 @@ else
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
 		yes|y)
-			if [ ! -f $PATH/screen_resolution.txt ]
+			check_directory_exists $PATH
+
+			if [ ! -f "$PATH/screen_resolution.txt" ]; then
 				save_screen_resolution $PATH
 			else
-				echo "Screen Resoltion file exists, renaming it to old_*"
+				echo "Screen resoltion file exists, renaming it to old_*"
 				echo ''
 				rename $PATH/screen_resolution.txt $TEMP/old_screen_resolution.txt
 				save_screen_resolution $PATH
