@@ -34,24 +34,24 @@ check_for_integer()
 
 check_directory_exists()
 {
-	if [ ! -z "$1" ]; then
+	if [[ ! -z "$1" ]]; then
 		PATH="$1"
 	fi
 
-	if [ ! -d "$PATH" ]; then
-		`mkdir $PATH`
+	if [[ ! -d "$PATH" ]]; then
+		`mkdir ./$PATH`
 	fi
 
-	if [ ! -d "$PATH/installation_files" ]; then
-		`mkdir $PATH/installation_files/`
+	if [[ ! -d "$PATH/installation_files" ]]; then
+		`mkdir ./$PATH/installation_files/`
 	fi
 }
 
 save_screen_resolution()
 {
-	if [ -z "$2" ]; then
+	if [[ -z "$2" ]]; then
 		TEMP=`xdpyinfo | awk '/dimensions/{print $2}'`
-		check_directory_exists $1
+		check_directory_exists "$1"
 		PATH=$1
 		HORIZONTAL_LENGTH=`echo $TEMP | cut -d 'x' -f 1`
 		echo $HORIZONTAL_LENGTH > $PATH/screen_resolution.txt
@@ -125,7 +125,7 @@ install_files()
 ######################### Main ############################
 
 # Get the screen dimensions
-`xdpyinfo | awk '/dimensions/{print $2}'`
+: xdpyinfo | awk '/dimensions/{print $2}'
 RETURN_CODE=$?
 echo "RETURN CODE = $RETURN_CODE"
 if [[ "$RETRUN_CODE" -ne "0" ]]; then
