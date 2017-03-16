@@ -6,7 +6,7 @@ HORIZONTAL_LENGTH=0
 RETURN_CODE=0
 REPLY=""
 TEMP=0
-DIR_DIR_PATH="~/Downloads/scalable_display"
+DIR_PATH="~/Downloads/scalable_display"
 GET_DIMENSIONS_PROMPT="Couldn't detect the screen dimensions, please enter manually..."
 
 
@@ -27,23 +27,58 @@ check_for_integer()
 		error_prompt integer
 		eval ${FUNCNAME[1]} # go to calling function
 	else
-		#http://www.linuxnix.com/bash-variable-assignment-command-not-found-error/
+		# http://www.linuxnix.com/bash-variable-assignment-command-not-found-error/
 		eval $2=$TEMP
 	fi
 }
 
 check_directory_exists()
 {
+	echo "Inside check_directory_exists"
 	if [[ ! -z "$1" ]]; then
 		DIR_PATH="$1"
 	fi
 
+	if [[ -d "DIR_PATH" ]]; then
+		return 1
+	else
+		return 0
+	fi
+}
+
+make_directory()
+{
+	if [[ ! -z "$1" ]]; then
+		DIR_PATH="$1"
+	fi
+	echo "\$DIR_PATH = $DIR_PATH"
+
 	if [[ ! -d "$DIR_PATH" ]]; then
-		`mkdir ./$DIR_PATH`
+		echo "Making $DIR_PATH..."
+		`mkdir -p "$DIR_PATH"`
 	fi
 
 	if [[ ! -d "$DIR_PATH/installation_files" ]]; then
-		`mkdir ./$DIR_PATH/installation_files/`
+		echo "Making installation_files directory..."
+		`mkdir -p "$DIR_PATH"/installation_files`
+	fi
+}
+
+change_directory()
+{
+	echo "Root directory -"
+	ls -l ~
+	echo -n "Enter path to directory to save to - "
+	read
+	check_directory_exists $REPLY
+	echo "\$REPLY = $REPLY"
+	RETURN_CODE=$?
+	if [ "$RETURN_CODE" -eq "0" ]; then
+		echo "No such directory found. Try again."
+		change_directory
+	else
+		$DIR_PATH="$REPLY"
+		make_directory $DIR_PATH	
 	fi
 }
 
@@ -60,7 +95,9 @@ save_screen_resolution()
 	else
 		HORIZONTAL_LENGTH=$1
 		VERTICAL_HEIGHT=$2
+		make_directory $DIR_PATH
 		echo $HORIZONTAL_LENGTH > screen_resolution.txt
+		echo $VERTICAL_HEIGHT >> screen_resolution.txt
 	fi
 }
 
@@ -127,7 +164,6 @@ install_files()
 # Get the screen dimensions
 : xdpyinfo | awk '/dimensions/{print $2}'
 RETURN_CODE=$?
-echo "RETURN CODE = $RETURN_CODE"
 if [[ "$RETRUN_CODE" -ne "0" ]]; then
 	echo "$GET_DIMENSIONS_PROMPT"
 	get_dimensions
@@ -138,14 +174,28 @@ else
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
 		yes|y)
-			check_directory_exists $DIR_PATH
-
-			if [ ! -f "$DIR_PATH/screen_resolution.txt" ]; then
+			echo -n "Config files will be save in $DIR_PATH, change directory? (yes/no)"
+			read
+			REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+			case $REPLY in
+				yes|y)
+					change_directory
+					;;
+				no|n)
+					make_directory $DIR_PATH
+					;;
+				*)
+					echo "$DIR_PATH used."
+					make_directory $DIR_PATH
+					;;
+			esac
+			
+			if [[ ! -f "$DIR_PATH/screen_resolution.txt" ]]; then
 				save_screen_resolution $DIR_PATH
 			else
 				echo "Screen resoltion file exists, renaming it to old_*"
 				echo ''
-				rename $DIR_PATH/screen_resolution.txt $TEMP/old_screen_resolution.txt
+				rename $DIR_PATH/screen_resolution.txt $DIR_PATH/old_screen_resolution.txt
 				save_screen_resolution $DIR_PATH
 			fi
 			;;
