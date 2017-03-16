@@ -6,7 +6,7 @@ HORIZONTAL_LENGTH=0
 RETURN_CODE=0
 REPLY=""
 TEMP=0
-PATH="~/Downloads/scalable_display/"
+DIR_DIR_PATH="~/Downloads/scalable_display"
 GET_DIMENSIONS_PROMPT="Couldn't detect the screen dimensions, please enter manually..."
 
 
@@ -35,15 +35,15 @@ check_for_integer()
 check_directory_exists()
 {
 	if [[ ! -z "$1" ]]; then
-		PATH="$1"
+		DIR_PATH="$1"
 	fi
 
-	if [[ ! -d "$PATH" ]]; then
-		`mkdir ./$PATH`
+	if [[ ! -d "$DIR_PATH" ]]; then
+		`mkdir ./$DIR_PATH`
 	fi
 
-	if [[ ! -d "$PATH/installation_files" ]]; then
-		`mkdir ./$PATH/installation_files/`
+	if [[ ! -d "$DIR_PATH/installation_files" ]]; then
+		`mkdir ./$DIR_PATH/installation_files/`
 	fi
 }
 
@@ -52,11 +52,11 @@ save_screen_resolution()
 	if [[ -z "$2" ]]; then
 		TEMP=`xdpyinfo | awk '/dimensions/{print $2}'`
 		check_directory_exists "$1"
-		PATH=$1
+		DIR_PATH=$1
 		HORIZONTAL_LENGTH=`echo $TEMP | cut -d 'x' -f 1`
-		echo $HORIZONTAL_LENGTH > $PATH/screen_resolution.txt
+		echo $HORIZONTAL_LENGTH > $DIR_PATH/screen_resolution.txt
 		VERTICAL_HEIGHT=`echo $TEMP | rev | cut -d 'x' -f 1 | rev`
-		echo $VERTICAL_HEIGHT >> $PATH/screen_resolution.txt
+		echo $VERTICAL_HEIGHT >> $DIR_PATH/screen_resolution.txt
 	else
 		HORIZONTAL_LENGTH=$1
 		VERTICAL_HEIGHT=$2
@@ -138,15 +138,15 @@ else
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
 		yes|y)
-			check_directory_exists $PATH
+			check_directory_exists $DIR_PATH
 
-			if [ ! -f "$PATH/screen_resolution.txt" ]; then
-				save_screen_resolution $PATH
+			if [ ! -f "$DIR_PATH/screen_resolution.txt" ]; then
+				save_screen_resolution $DIR_PATH
 			else
 				echo "Screen resoltion file exists, renaming it to old_*"
 				echo ''
-				rename $PATH/screen_resolution.txt $TEMP/old_screen_resolution.txt
-				save_screen_resolution $PATH
+				rename $DIR_PATH/screen_resolution.txt $TEMP/old_screen_resolution.txt
+				save_screen_resolution $DIR_PATH
 			fi
 			;;
 		no|n)
