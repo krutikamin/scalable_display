@@ -133,23 +133,49 @@ get_dimensions()
 
 install_files()
 {
-	echo -ne "Download and install pwlibs and pwmxplayer (yes/no)? "
+	echo -ne "Download pwlibs and pwmxplayer (yes/no)? "
 	read
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
 		yes|y)
 			echo "Downloading files..."
 
-			wget --progress=bar http://dl.piwall.co.uk/pwlibs1_1.1_armhf.deb
+			`wget --progress=bar http://dl.piwall.co.uk/pwlibs1_1.1_armhf.deb`
 			`mv *.deb $DIR_PATH/installation_files/`
-			echo "Installing downloaded files..."
-			#sudo dpkg -i $DIR_PATH/installation_files/pwlibs1_1.1_armhf.deb
 
-			wget --progress=bar http://dl.piwall.co.uk/pwomxplayer_20130815_armhf.deb
+			echo -ne "Install pwlibs (yes/no)? "
+			read
+			REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+			case $REPLY in
+				yes|y)
+					echo "Installing pwlibs..."
+					`sudo dpkg -i $DIR_PATH/installation_files/pwlibs1_1.1_armhf.deb`
+					;;
+				no|n)
+					;;
+				*)
+					install_files
+					;;
+				esac
+
+			`wget --progress=bar http://dl.piwall.co.uk/pwomxplayer_20130815_armhf.deb`
 			`mv pwomxplayer_20130815_armhf.deb $DIR_PATH/installation_files/`
 			`mv *.deb $DIR_PATH/installation_files/`
-			echo "Installing downloaded files..."
-			#sudo dpkg -i $DIR_PATH/installation_files/pwomxplayer_20130815_armhf.deb
+
+			echo -ne "Install pwomxplayer (yes/no)? "
+			read
+			REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+			case $REPLY in
+				yes|y)
+					echo "Installing pwomxplayer..."
+					`sudo dpkg -i $DIR_PATH/installation_files/pwomxplayer_20130815_armhf.deb`
+					;;
+				no|n)
+					;;
+				*)
+					install_files
+					;;
+				esac
 			;;
 		no|n)
 			;;
@@ -166,7 +192,8 @@ install_files()
 ######################### Main ############################
 
 # Get the screen dimensions
-: xdpyinfo | awk '/dimensions/{print $2}'
+XDPYINFO_DIMENSION=`xdpyinfo | awk '/dimensions/{print $2}'`
+echo $XDPYINFO_DIMENSION
 RETURN_CODE=$?
 if [[ "$RETRUN_CODE" -ne "0" ]]; then
 	echo "$GET_DIMENSIONS_PROMPT"
