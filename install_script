@@ -8,6 +8,7 @@ REPLY=""
 TEMP=0
 DIR_PATH="$HOME/Downloads/scalable_display"
 GET_DIMENSIONS_PROMPT="Couldn't detect the screen dimensions, please enter manually..."
+MASTER_IP
 
 
 ########################## Functions ###########################
@@ -184,7 +185,28 @@ install_files()
 	esac
 }
 
-
+get_master_ip()
+{
+	echo 
+	echo -n "Please enter the IP address of the master to transfer screen-resolution file : "
+	read MASTER_IP
+	echo -n "Please confirm the IP address - $MASTER_IP (yes/no)? "
+	read
+	# Convert the user reply to lower case
+	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+	case $REPLY in
+		yes|y)
+			scp $DIR_PATH/screen_resolution.txt pi@$MASTER_IP:$DIR_PATH
+			;;
+		no|n)
+		#*)
+			get_master_ip
+			;;
+		*)
+			get_master_ip
+			;;
+	esac
+}
 
 
 ###########################################################
@@ -242,3 +264,4 @@ else
 fi
 
 install_files
+get_master_ip
