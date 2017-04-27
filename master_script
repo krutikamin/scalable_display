@@ -1,0 +1,35 @@
+#!/bin/bash
+
+COUNTER=0
+LINE=""
+REPLY=""
+DIR_PATH="$HOME/Downloads/scalable_display"
+WIDTH=0
+HEIGHT=0
+
+make_config_file()
+{
+	https://stackoverflow.com/questions/10929453/read-a-file-line-by-line-assigning-the-value-to-a-variable
+	while IFS='' read -r line || [[ -n "$LINE" ]]; do
+
+}
+
+get_num_tiles()
+{
+	echo -n "Please enter the number of tiles: "
+	read COUNTER
+	echo -n "Please verify the number of tiles: "
+	read
+	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+	case $REPLY in
+		yes|ye|y)
+			make_config_file
+			;;
+		no|n)
+			get_num_tiles
+			;;
+		*)
+			get_num_tiles
+			;;
+	esac
+}
