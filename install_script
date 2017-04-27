@@ -8,7 +8,7 @@ REPLY=""
 TEMP=0
 DIR_PATH="$HOME/Downloads/scalable_display"
 GET_DIMENSIONS_PROMPT="Couldn't detect the screen dimensions, please enter manually..."
-MASTER_IP
+MASTER_IP=""
 
 
 ########################## Functions ###########################
@@ -16,6 +16,34 @@ MASTER_IP
 error_prompt()
 {
 	echo "Please enter "$1"..."
+}
+
+use_xrandr()
+{
+	TEMP=`which xrandr`
+	if [[ ${#TEMP} -eq 0 ]]; then
+		echo "xrandr not available."
+		get_dimensions
+	else
+		#https://superuser.com/questions/196532/how-do-i-find-out-my-screen-resolution-from-a-shell-script
+		$HORIZONTAL_LENGTH=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1)
+		$VERTICAL_HEIGHT=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2)
+	fi
+}
+
+use_xdpyinfo()
+{
+	TEMP=`which xdpyinfo`
+	if [[ ${#TEMP} -eq 0 ]]; then
+		echo "xdpyinfo not available."
+		get_dimensions
+	else		
+		TEMP=`xdpyinfo | awk '/dimensions/{print $2}'`
+		HORIZONTAL_LENGTH=`echo $TEMP | cut -d 'x' -f 1`
+		echo $HORIZONTAL_LENGTH > $DIR_PATH/screen_resolution.txt
+		VERTICAL_HEIGHT=`echo $TEMP | rev | cut -d 'x' -f 1 | rev`
+		echo $VERTICAL_HEIGHT >> $DIR_PATH/screen_resolution.txt
+	fi
 }
 
 check_for_integer()
@@ -215,53 +243,54 @@ get_master_ip()
 
 # Get the screen dimensions
 XDPYINFO_DIMENSION=`xdpyinfo | awk '/dimensions/{print $2}'`
-echo $XDPYINFO_DIMENSION
-RETURN_CODE=$?
-if [[ "$RETRUN_CODE" -ne "0" ]]; then
-	echo "$GET_DIMENSIONS_PROMPT"
-	get_dimensions
+#echo $XDPYINFO_DIMENSION
+echo "xdpyinfo output = ${#XDPYINFO_DIMENSION}"
+#RETURN_CODE=$?
+if [[ ${#XDPYINFO_DIMENSION} -eq 0 ]]; then
+	use_xrandr
 else
-	echo -ne "Is your screen resolution"  `xdpyinfo | awk '/dimensions/{print $2}'` "(yes/no)? "
-	read
-	# Convert the user reply to lower case
-	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
-	case $REPLY in
-		yes|y)
-			echo -n "Config files will be save in $DIR_PATH, change directory? (yes/no) "
-			read
-			REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
-			case $REPLY in
-				yes|y)
-					change_directory
-					;;
-				no|n)
-					make_directory $DIR_PATH
-					;;
-				*)
-					echo "$DIR_PATH used."
-					make_directory $DIR_PATH
-					;;
-			esac
-			
-			if [[ ! -f "$DIR_PATH/screen_resolution.txt" ]]; then
-				save_screen_resolution $DIR_PATH
-			else
-				echo "Screen resoltion file exists, renaming it to old_*"
-				echo ''
-				cp $DIR_PATH/screen_resolution.txt $DIR_PATH/old_screen_resolution.txt
-				rm $DIR_PATH/screen_resolution.txt
-				save_screen_resolution $DIR_PATH
-			fi
-			;;
-		no|n)
-			get_dimensions
-			;;
-		*)
-			echo "Sorry, try again."
-			echo
-			;;
-	esac
+	use_xdpyinfo
 fi
+echo -ne "Is your screen resolution"  `xdpyinfo | awk '/dimensions/{print $2}'` "(yes/no)? "
+read
+# Convert the user reply to lower case
+REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+case $REPLY in
+	yes|y)
+		echo -n "Config files will be save in $DIR_PATH, change directory? (yes/no) "
+		read
+		REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+		case $REPLY in
+			yes|y)
+				change_directory
+				;;
+			no|n)
+				make_directory $DIR_PATH
+				;;
+			*)
+				echo "$DIR_PATH used."
+				make_directory $DIR_PATH
+				;;
+		esac
+		
+		if [[ ! -f "$DIR_PATH/screen_resolution.txt" ]]; then
+			save_screen_resolution $DIR_PATH
+		else
+			echo "Screen resoltion file exists, renaming it to old_*"
+			echo ''
+			cp $DIR_PATH/screen_resolution.txt $DIR_PATH/old_screen_resolution.txt
+			rm $DIR_PATH/screen_resolution.txt
+			save_screen_resolution $DIR_PATH
+		fi
+		;;
+	no|n)
+		get_dimensions
+		;;
+	*)
+		echo "Sorry, try again."
+		echo
+		;;
+esac
 
 install_files
 get_master_ip
