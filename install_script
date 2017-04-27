@@ -7,6 +7,7 @@ RETURN_CODE=0
 REPLY=""
 TEMP=0
 DIR_PATH="$HOME/Downloads/scalable_display"
+PI_INDEX=`hostname`
 GET_DIMENSIONS_PROMPT="Couldn't detect the screen dimensions, please enter manually..."
 MASTER_IP=""
 
@@ -40,9 +41,9 @@ use_xdpyinfo()
 	else		
 		TEMP=`xdpyinfo | awk '/dimensions/{print $2}'`
 		HORIZONTAL_LENGTH=`echo $TEMP | cut -d 'x' -f 1`
-		echo $HORIZONTAL_LENGTH > $DIR_PATH/screen_resolution.txt
+		echo $HORIZONTAL_LENGTH > $DIR_PATH/${PI_INDEX}_screen_resolution.txt
 		VERTICAL_HEIGHT=`echo $TEMP | rev | cut -d 'x' -f 1 | rev`
-		echo $VERTICAL_HEIGHT >> $DIR_PATH/screen_resolution.txt
+		echo $VERTICAL_HEIGHT >> $DIR_PATH/${PI_INDEX}_screen_resolution.txt
 	fi
 }
 
@@ -120,15 +121,15 @@ save_screen_resolution()
 		check_directory_exists "$1"
 		DIR_PATH=$1
 		HORIZONTAL_LENGTH=`echo $TEMP | cut -d 'x' -f 1`
-		echo $HORIZONTAL_LENGTH > $DIR_PATH/screen_resolution.txt
+		echo $HORIZONTAL_LENGTH > $DIR_PATH/${PI_INDEX}_screen_resolution.txt
 		VERTICAL_HEIGHT=`echo $TEMP | rev | cut -d 'x' -f 1 | rev`
-		echo $VERTICAL_HEIGHT >> $DIR_PATH/screen_resolution.txt
+		echo $VERTICAL_HEIGHT >> $DIR_PATH/${PI_INDEX}_screen_resolution.txt
 	else
 		HORIZONTAL_LENGTH=$1
 		VERTICAL_HEIGHT=$2
 		make_directory $DIR_PATH
-		echo $HORIZONTAL_LENGTH > screen_resolution.txt
-		echo $VERTICAL_HEIGHT >> screen_resolution.txt
+		echo $HORIZONTAL_LENGTH > ${PI_INDEX}_screen_resolution.txt
+		echo $VERTICAL_HEIGHT >> ${PI_INDEX}_screen_resolution.txt
 	fi
 }
 
@@ -154,9 +155,9 @@ get_dimensions()
 	get_vertical_height
 
 	echo "Horizontal length = $HORIZONTAL_LENGTH"
-	#echo $HORIZONTAL_LENGTH > screen_resolution.txt
+	#echo $HORIZONTAL_LENGTH > ${PI_INDEX}_screen_resolution.txt
 	echo "Vertical height = $VERTICAL_HEIGHT"
-	#echo $VERTICAL_HEIGHT >> screen_resolution.txt
+	#echo $VERTICAL_HEIGHT >> ${PI_INDEX}_screen_resolution.txt
 	save_screen_resolution $HORIZONTAL_LENGTH $VERTICAL_HEIGHT
 }
 
@@ -224,7 +225,7 @@ get_master_ip()
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
 		yes|y)
-			scp $DIR_PATH/screen_resolution.txt pi@$MASTER_IP:$DIR_PATH
+			scp $DIR_PATH/${PI_INDEX}_screen_resolution.txt pi@$MASTER_IP:$DIR_PATH
 			;;
 		no|n)
 		#*)
@@ -273,7 +274,7 @@ case $REPLY in
 				;;
 		esac
 		
-		if [[ ! -f "$DIR_PATH/screen_resolution.txt" ]]; then
+		if [[ ! -f "$DIR_PATH/${PI_INDEX}_screen_resolution.txt" ]]; then
 			save_screen_resolution $DIR_PATH
 		else
 			echo "Screen resoltion file exists, renaming it to old_*"
