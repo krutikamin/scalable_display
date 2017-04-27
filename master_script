@@ -6,24 +6,41 @@ REPLY=""
 DIR_PATH="$HOME/Downloads/scalable_display"
 WIDTH=0
 HEIGHT=0
+FILES="$DIRPATH"
+
+echo $FILES
 
 make_config_file()
 {
-	https://stackoverflow.com/questions/10929453/read-a-file-line-by-line-assigning-the-value-to-a-variable
-	while IFS='' read -r line || [[ -n "$LINE" ]]; do
-
+	#https://stackoverflow.com/questions/10929453/read-a-file-line-by-line-assigning-the-value-to-a-variable
+	#while IFS='' read -r LINE || [[ -n "$LINE" ]]; do
+	#	echo "Text read from file: $LINE"
+	#done < "screen_resolution.txt"
+	#awk '{s+=$1} END {print s}' "$1"
+	local TEMP=`head -n 1 "$1"`
+	WIDTH=$(( $WIDTH + $TEMP ))
+	#WIDTH=$(( $WIDTH+`head -n 1 "$1"` ))
+	echo "\$WIDTH = $WIDTH"
+	local TEMP=`tail -n 1 "$1"`
+	HEIGHT=$(( $HEIGHT + $TEMP ))
+	#HEIGHT=$HEIGHT+`tail -n 1 "$1"`
+	echo "\$HEIGHT = $HEIGHT"
 }
 
 get_num_tiles()
 {
 	echo -n "Please enter the number of tiles: "
 	read COUNTER
-	echo -n "Please verify the number of tiles: "
+	echo -n "Please verify that the number of tiles are $COUNTER (yes/no)- "
 	read
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
 		yes|ye|y)
-			make_config_file
+			while [ $COUNTER -gt 0 ]
+			do
+				make_config_file "raspberrypi${#COUNTER}_screen_resolution.txt"
+				COUNTER=$(( COUNTER-1 ))
+			done
 			;;
 		no|n)
 			get_num_tiles
@@ -33,3 +50,7 @@ get_num_tiles()
 			;;
 	esac
 }
+
+get_num_tiles
+echo "Total width = $WIDTH"
+echo "Total height = $HEIGHT"
