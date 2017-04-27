@@ -19,34 +19,6 @@ error_prompt()
 	echo "Please enter "$1"..."
 }
 
-use_xrandr()
-{
-	TEMP=`which xrandr`
-	if [[ ${#TEMP} -eq 0 ]]; then
-		echo "xrandr not available."
-		get_dimensions
-	else
-		#https://superuser.com/questions/196532/how-do-i-find-out-my-screen-resolution-from-a-shell-script
-		$HORIZONTAL_LENGTH=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1)
-		$VERTICAL_HEIGHT=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2)
-	fi
-}
-
-use_xdpyinfo()
-{
-	TEMP=`which xdpyinfo`
-	if [[ ${#TEMP} -eq 0 ]]; then
-		echo "xdpyinfo not available."
-		get_dimensions
-	else		
-		TEMP=`xdpyinfo | awk '/dimensions/{print $2}'`
-		HORIZONTAL_LENGTH=`echo $TEMP | cut -d 'x' -f 1`
-		echo $HORIZONTAL_LENGTH > $DIR_PATH/${PI_INDEX}_screen_resolution.txt
-		VERTICAL_HEIGHT=`echo $TEMP | rev | cut -d 'x' -f 1 | rev`
-		echo $VERTICAL_HEIGHT >> $DIR_PATH/${PI_INDEX}_screen_resolution.txt
-	fi
-}
-
 check_for_integer()
 {
 	TEMP=$1
@@ -67,6 +39,7 @@ check_directory_exists()
 	echo "Inside check_directory_exists"
 	if [[ ! -z "$1" ]]; then
 		DIR_PATH="$1"
+		echo "New directory path = $DIR_PATH"
 	fi
 
 	if [[ -d "DIR_PATH" ]]; then
@@ -101,7 +74,8 @@ change_directory()
 	ls -l ~
 	echo -n "Enter path to directory to save to - "
 	read
-	check_directory_exists $REPLY
+	echo "$HOME/$REPLY"
+	check_directory_exists "$HOME/$REPLY"
 	RETURN_CODE=$?
 	echo "\$RETURN_CODE = $RETURN_CODE"
 	echo "\$REPLY = $REPLY"
@@ -161,13 +135,41 @@ get_dimensions()
 	save_screen_resolution $HORIZONTAL_LENGTH $VERTICAL_HEIGHT
 }
 
+use_xrandr()
+{
+	TEMP=`which xrandr`
+	if [[ ${#TEMP} -eq 0 ]]; then
+		echo "xrandr not available."
+		get_dimensions
+	else
+		#https://superuser.com/questions/196532/how-do-i-find-out-my-screen-resolution-from-a-shell-script
+		$HORIZONTAL_LENGTH=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1)
+		$VERTICAL_HEIGHT=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2)
+	fi
+}
+
+use_xdpyinfo()
+{
+	TEMP=`which xdpyinfo`
+	if [[ ${#TEMP} -eq 0 ]]; then
+		echo "xdpyinfo not available."
+		get_dimensions
+	else		
+		TEMP=`xdpyinfo | awk '/dimensions/{print $2}'`
+		HORIZONTAL_LENGTH=`echo $TEMP | cut -d 'x' -f 1`
+		echo $HORIZONTAL_LENGTH > $DIR_PATH/${PI_INDEX}_screen_resolution.txt
+		VERTICAL_HEIGHT=`echo $TEMP | rev | cut -d 'x' -f 1 | rev`
+		echo $VERTICAL_HEIGHT >> $DIR_PATH/${PI_INDEX}_screen_resolution.txt
+	fi
+}
+
 install_files()
 {
 	echo -ne "Download pwlibs and pwmxplayer (yes/no)? "
 	read
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
-		yes|y)
+		yes|ye|y)
 			echo "Downloading files..."
 
 			`wget --progress=bar http://dl.piwall.co.uk/pwlibs1_1.1_armhf.deb`
@@ -177,7 +179,7 @@ install_files()
 			read
 			REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 			case $REPLY in
-				yes|y)
+				yes|ye|y)
 					echo "Installing pwlibs..."
 					`sudo dpkg -i $DIR_PATH/installation_files/pwlibs1_1.1_armhf.deb`
 					;;
@@ -196,7 +198,7 @@ install_files()
 			read
 			REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 			case $REPLY in
-				yes|y)
+				yes|ye|y)
 					echo "Installing pwomxplayer..."
 					`sudo dpkg -i $DIR_PATH/installation_files/pwomxplayer_20130815_armhf.deb`
 					;;
@@ -224,7 +226,7 @@ get_master_ip()
 	# Convert the user reply to lower case
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
-		yes|y)
+		yes|ye|y)
 			scp $DIR_PATH/${PI_INDEX}_screen_resolution.txt pi@$MASTER_IP:$DIR_PATH
 			;;
 		no|n)
@@ -252,17 +254,18 @@ if [[ ${#XDPYINFO_DIMENSION} -eq 0 ]]; then
 else
 	use_xdpyinfo
 fi
-echo -ne "Is your screen resolution"  `xdpyinfo | awk '/dimensions/{print $2}'` "(yes/no)? "
+echo -ne "Is your screen resolution "$HORIZONTAL_LENGTH"x"$VERTICAL_HEIGHT" (yes/no)? "
+#echo -ne "Is your screen resolution"  `xdpyinfo | awk '/dimensions/{print $2}'` "(yes/no)? "
 read
 # Convert the user reply to lower case
 REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 case $REPLY in
-	yes|y)
-		echo -n "Config files will be save in $DIR_PATH, change directory? (yes/no) "
+	yes|ye|y)
+		echo -n "Config files will be saved in $DIR_PATH"#, change directory? (yes/no) "
 		read
 		REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 		case $REPLY in
-			yes|y)
+			yes|ye|y)
 				change_directory
 				;;
 			no|n)
@@ -279,8 +282,8 @@ case $REPLY in
 		else
 			echo "Screen resoltion file exists, renaming it to old_*"
 			echo ''
-			cp $DIR_PATH/screen_resolution.txt $DIR_PATH/old_screen_resolution.txt
-			rm $DIR_PATH/screen_resolution.txt
+			cp $DIR_PATH/${#PI_INDEX}_screen_resolution.txt $DIR_PATH/old_screen_resolution.txt
+			rm $DIR_PATH/${#PI_INDEX}_screen_resolution.txt
 			save_screen_resolution $DIR_PATH
 		fi
 		;;
