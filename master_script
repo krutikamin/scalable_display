@@ -7,16 +7,18 @@ DIR_PATH="$HOME/Downloads/scalable_display"
 WIDTH=0
 HEIGHT=0
 FILES="$DIRPATH"
+BAZEL_SIZE=0
 
 echo $FILES
 
-make_config_file()
+add_dimensions()
 {
 	#https://stackoverflow.com/questions/10929453/read-a-file-line-by-line-assigning-the-value-to-a-variable
 	#while IFS='' read -r LINE || [[ -n "$LINE" ]]; do
 	#	echo "Text read from file: $LINE"
 	#done < "screen_resolution.txt"
 	#awk '{s+=$1} END {print s}' "$1"
+	echo "Now adding $1's dimensions."
 	local TEMP=`head -n 1 "$1"`
 	WIDTH=$(( $WIDTH + $TEMP ))
 	#WIDTH=$(( $WIDTH+`head -n 1 "$1"` ))
@@ -38,7 +40,7 @@ get_num_tiles()
 		yes|ye|y)
 			while [ $COUNTER -gt 0 ]
 			do
-				make_config_file "raspberrypi${#COUNTER}_screen_resolution.txt"
+				add_dimensions "raspberrypi${#COUNTER}_screen_resolution.txt"
 				COUNTER=$(( COUNTER-1 ))
 			done
 			;;
@@ -51,6 +53,38 @@ get_num_tiles()
 	esac
 }
 
+check_for_integer()
+{
+	local TEMP=$1
+	echo $TEMP | grep "[^0-9]" > /dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		echo "Please enter a positive integer..."
+		eval ${FUNCNAME[1]}
+	else
+		eval $2=$TEMP
+	fi
+}
+
+compensate_bazel()
+{
+	echo -n "Please enter approximate bazel size to compensate - "
+	read
+	check_for_integer $REPLY BAZEL_SIZE
+}
+
+#make_config_file()
+{
+		
+}
+
+
+#############################################################################################################
+####################################################  MAIN  #################################################
+#############################################################################################################
+
 get_num_tiles
 echo "Total width = $WIDTH"
 echo "Total height = $HEIGHT"
+compensate_bazel
+#make_config_file
+echo "\$BAZEL_SIZE=$BAZEL_SIZE"
