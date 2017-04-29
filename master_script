@@ -1,6 +1,6 @@
 #!/bin/bash
 
-COUNTER=0
+SCREEN_COUNTER=0
 LINE=""
 REPLY=""
 DIR_PATH="$HOME/Downloads/scalable_display"
@@ -11,8 +11,19 @@ BAZEL_SIZE=0
 
 echo $FILES
 
+flush_input()
+{
+	read -t 1 -n 512 discard
+}
+
+get_func_name()
+{
+	echo "*********** $1 ${FUNCNAME[1]} **************"
+}
+
 add_dimensions()
 {
+	get_func_name "Entering"
 	#https://stackoverflow.com/questions/10929453/read-a-file-line-by-line-assigning-the-value-to-a-variable
 	#while IFS='' read -r LINE || [[ -n "$LINE" ]]; do
 	#	echo "Text read from file: $LINE"
@@ -27,34 +38,12 @@ add_dimensions()
 	HEIGHT=$(( $HEIGHT + $TEMP ))
 	#HEIGHT=$HEIGHT+`tail -n 1 "$1"`
 	echo "\$HEIGHT = $HEIGHT"
-}
-
-get_num_tiles()
-{
-	echo -n "Please enter the number of tiles: "
-	read COUNTER
-	echo -n "Please verify that the number of tiles are $COUNTER (yes/no)- "
-	read
-	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
-	case $REPLY in
-		yes|ye|y)
-			while [ $COUNTER -gt 0 ]
-			do
-				add_dimensions "raspberrypi${#COUNTER}_screen_resolution.txt"
-				COUNTER=$(( COUNTER-1 ))
-			done
-			;;
-		no|n)
-			get_num_tiles
-			;;
-		*)
-			get_num_tiles
-			;;
-	esac
+	get_func_name "Exiting"
 }
 
 check_for_integer()
 {
+	get_func_name "Entering"
 	local TEMP=$1
 	echo $TEMP | grep "[^0-9]" > /dev/null 2>&1
 	if [ "$?" -eq "0" ]; then
@@ -63,19 +52,51 @@ check_for_integer()
 	else
 		eval $2=$TEMP
 	fi
+	get_func_name "Exiting"
+}
+
+get_num_tiles()
+{
+	get_func_name "Entering"
+	flush_input
+	echo -n "Please enter the number of tiles: "
+	read 
+	check_for_integer $REPLY SCREEN_COUNTER
+	flush_input
+	echo -n "Please verify that the number of tiles are $SCREEN_COUNTER (yes/no)- "
+	read
+	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+	case $REPLY in
+		yes|ye|y)
+			while [ $SCREEN_COUNTER -gt 0 ]
+			do
+				echo "\$SCREEN_COUNTER before add_dimensions - $SCREEN_COUNTER"
+				add_dimensions "raspberrypi${#SCREEN_COUNTER}_screen_resolution.txt"
+				SCREEN_COUNTER=$(( $SCREEN_COUNTER-1 ))
+			done
+			;;
+		no|n)
+			get_num_tiles
+			;;
+		*)
+			echo "Inside default"
+			get_num_tiles
+			;;
+	esac
+	get_func_name "Exiting"
 }
 
 compensate_bazel()
 {
+	flush_input
 	echo -n "Please enter approximate bazel size to compensate - "
 	read
 	check_for_integer $REPLY BAZEL_SIZE
+	
 }
 
 #make_config_file()
-{
 		
-}
 
 
 #############################################################################################################
