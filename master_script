@@ -8,27 +8,24 @@ WIDTH=0
 HEIGHT=0
 FILES="$DIRPATH"
 BAZEL_SIZE=0
+SCREENS_HORIZONTAL=0
+SCREENS_VERTICAL=0
 
 echo $FILES
 
-flush_input()
+entering()
 {
-	read -t 1 -n 512 discard
+	echo "*********** Entering ${FUNCNAME[1]} **************"
 }
 
-get_func_name()
+exiting()
 {
-	echo "*********** $1 ${FUNCNAME[1]} **************"
+	echo "*********** Exiting ${FUNCNAME[1]} **************"
 }
 
 add_dimensions()
 {
-	get_func_name "Entering"
-	#https://stackoverflow.com/questions/10929453/read-a-file-line-by-line-assigning-the-value-to-a-variable
-	#while IFS='' read -r LINE || [[ -n "$LINE" ]]; do
-	#	echo "Text read from file: $LINE"
-	#done < "screen_resolution.txt"
-	#awk '{s+=$1} END {print s}' "$1"
+	entering
 	echo "Now adding $1's dimensions."
 	local TEMP=`head -n 1 "$1"`
 	WIDTH=$(( $WIDTH + $TEMP ))
@@ -38,12 +35,12 @@ add_dimensions()
 	HEIGHT=$(( $HEIGHT + $TEMP ))
 	#HEIGHT=$HEIGHT+`tail -n 1 "$1"`
 	echo "\$HEIGHT = $HEIGHT"
-	get_func_name "Exiting"
+	exiting
 }
 
 check_for_integer()
 {
-	get_func_name "Entering"
+	entering
 	local TEMP=$1
 	echo $TEMP | grep "[^0-9]" > /dev/null 2>&1
 	if [ "$?" -eq "0" ]; then
@@ -52,12 +49,12 @@ check_for_integer()
 	else
 		eval $2=$TEMP
 	fi
-	get_func_name "Exiting"
+	exiting
 }
 
 get_num_tiles()
 {
-	get_func_name "Entering"
+	entering
 	flush_input
 	echo -n "Please enter the number of tiles: "
 	read 
@@ -68,11 +65,18 @@ get_num_tiles()
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
 		yes|ye|y)
-			while [ $SCREEN_COUNTER -gt 0 ]
+			echo -n "Please enter number of tiles in horizontal direction- "
+			read
+			check_for_integer $REPLY SCREENS_HORIZONTAL
+			echo -n "Please enter number of tiles in vertical direction- "
+			read
+			check_for_integer $REPLY SCREENS_VERTICAL
+			local TEMP=$SCREEN_COUNTER
+			while [ $TEMP -gt 0 ]
 			do
 				echo "\$SCREEN_COUNTER before add_dimensions - $SCREEN_COUNTER"
 				add_dimensions "raspberrypi${#SCREEN_COUNTER}_screen_resolution.txt"
-				SCREEN_COUNTER=$(( $SCREEN_COUNTER-1 ))
+				TEMP=$(( $TEMP-1 ))
 			done
 			;;
 		no|n)
@@ -83,19 +87,54 @@ get_num_tiles()
 			get_num_tiles
 			;;
 	esac
-	get_func_name "Exiting"
+	exiting
 }
 
 compensate_bazel()
 {
-	flush_input
 	echo -n "Please enter approximate bazel size to compensate - "
 	read
 	check_for_integer $REPLY BAZEL_SIZE
-	
 }
 
-#make_config_file()
+make_config_file()
+{
+	local TEMP=0
+	local REMAINDER=0 
+	local X_COORDS=0
+	local Y_COORDS=0
+	local BAZEL_WIDTH=$(( WIDTH / SCREENS_HORIZONTAL - BAZEL_SIZE))
+	local BAZEL_HEIGHT=$(( HEIGHT / SCREENS_VERTICAL - BAZEL_SIZE))
+
+	TEMP=1
+	X_COORDS=0
+	Y_COORDS=0
+	while [ $TEMP -ne $SCREENS_HORIZONTAL ]; do
+		`X${TEMP}=$X_COORDS`
+		X_COORDS=$(( WIDTH / SCREENS_HORIZONTAL + BAZEL_SIZE + BAZEL_SIZE ))
+		TEMP=$(( $TEMP + 1 ))
+	done
+	echo "\$X1 = $X1"
+	cat <<-END > .piwall
+	[${SCREEN_COUNTER}bez_wall]
+	width=$WIDTH
+	height=$HEIGHT
+	x=0
+	y=0
+
+
+	END
+	TEMP=0
+	while [ $TEMP -lt $SCREEN_COUNTER ]; do
+		cat <<-END >> .piwall	
+		[${SCREEN_COUNTER}bez_wall_$(( TEMP + 1 ))]
+		wall=$SCREEN_COUNTERbez_wall
+		width=$(( WIDTH / SCREENS_HORIZONTAL - BAZEL_SIZE))
+		height=$(( HEIGHT / SCREENS_VERTICAL - BAZEL_SIZE))
+		END
+	TEMP=$(( $TEMP + 1 ))
+	done
+}
 		
 
 
@@ -107,5 +146,5 @@ get_num_tiles
 echo "Total width = $WIDTH"
 echo "Total height = $HEIGHT"
 compensate_bazel
-#make_config_file
+make_config_file
 echo "\$BAZEL_SIZE=$BAZEL_SIZE"
