@@ -254,6 +254,7 @@ if [[ ${#XDPYINFO_DIMENSION} -eq 0 ]]; then
 else
 	use_xdpyinfo
 fi
+make_directory
 echo -ne "Is your screen resolution "$HORIZONTAL_LENGTH"x"$VERTICAL_HEIGHT" (yes/no)? "
 #echo -ne "Is your screen resolution"  `xdpyinfo | awk '/dimensions/{print $2}'` "(yes/no)? "
 read
@@ -261,7 +262,7 @@ read
 REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 case $REPLY in
 	yes|ye|y)
-		echo -n "Config files will be saved in $DIR_PATH"#, change directory? (yes/no) "
+		echo -n "Config files will be saved in $DIR_PATH, change directory? (yes/no) "
 		read
 		REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 		case $REPLY in
