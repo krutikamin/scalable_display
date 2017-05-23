@@ -51,17 +51,18 @@ check_directory_exists()
 
 make_directory()
 {
+	# If there is an argument present, make that new DIR_PATH
 	if [[ ! -z "$1" ]]; then
 		DIR_PATH="$1"
 	fi
 
-	echo "\$DIR_PATH = $DIR_PATH"
-
+	# Make main directory
 	if [[ ! -d "$DIR_PATH" ]]; then
 		echo "Making $DIR_PATH..."
 		`mkdir -p "$DIR_PATH"`
 	fi
 
+	# Make installation files directory
 	if [[ ! -d "$DIR_PATH/installation_files" ]]; then
 		echo "Making installation_files directory..."
 		`mkdir -p "$DIR_PATH"/installation_files`
@@ -70,17 +71,12 @@ make_directory()
 
 save_screen_resolution()
 {
+	# Save to the DIR_PATH director if specified in argument 1
 	if [[ -z "$2" ]]; then
-		#check_directory_exists "$1"
-		#if [[ $? = 0 ]]; then
-		#	make_directory "$1"
-		#	save_screen_resolution "$1"
-		#else
-			DIR_PATH=$1
-			echo $HORIZONTAL_LENGTH > $DIR_PATH/${PI_INDEX}_screen_resolution.txt
-			VERTICAL_HEIGHT=`echo $TEMP | rev | cut -d 'x' -f 1 | rev`
-			echo $VERTICAL_HEIGHT >> $DIR_PATH/${PI_INDEX}_screen_resolution.txt
-		#fi
+		DIR_PATH=$1
+		echo $HORIZONTAL_LENGTH > $DIR_PATH/${PI_INDEX}_screen_resolution.txt
+		echo $VERTICAL_HEIGHT >> $DIR_PATH/${PI_INDEX}_screen_resolution.txt
+	# else save screen resolution file to the default directory
 	else
 		HORIZONTAL_LENGTH=$1
 		VERTICAL_HEIGHT=$2
@@ -202,8 +198,6 @@ install_files()
 get_master_ip()
 {
 	echo 
-	#echo -n "Please enter the IP address of the master to transfer screen-resolution file : "
-	#read MASTER_IP
 	echo -n "Please confirm the IP address of the master - $MASTER_IP (yes/no)? "
 	read
 	# Convert the user reply to lower case
@@ -226,8 +220,8 @@ get_master_ip()
 
 
 ###########################################################
-
 ######################### Main ############################
+###########################################################
 
 # Get the screen dimensions
 XDPYINFO_DIMENSION=`xdpyinfo | awk '/dimensions/{print $2}'`
@@ -238,6 +232,7 @@ else
 	echo "Using xdpyinfo to get the screen resolution..."
 	use_xdpyinfo
 fi
+# Make directory with the default path
 make_directory
 echo -ne "Is your screen resolution "$HORIZONTAL_LENGTH"x"$VERTICAL_HEIGHT" (yes/no)? "
 read
@@ -246,9 +241,13 @@ REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 case $REPLY in
 	yes|ye|y)
 		echo -n "Config files will be saved in $DIR_PATH"
+		# Insert option to change directory here in the future if warranted
 		make_directory $DIR_PATH
 		
 		if [[ ! -f "$DIR_PATH/${PI_INDEX}_screen_resolution.txt" ]]; then
+			# Save screen resolution file if it doesn't exist to the default 
+			# path, or supply DIR_PATH which may have been changed by the 
+			# user previously
 			save_screen_resolution $DIR_PATH
 		else
 			echo "Screen resoltion file exists, renaming it to old_*"
