@@ -55,11 +55,9 @@ check_for_integer()
 get_num_tiles()
 {
 	entering
-	flush_input
 	echo -n "Please enter the number of tiles: "
 	read 
 	check_for_integer $REPLY SCREEN_COUNTER
-	flush_input
 	echo -n "Please verify that the number of tiles are $SCREEN_COUNTER (yes/no)- "
 	read
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
@@ -74,8 +72,9 @@ get_num_tiles()
 			local TEMP=$SCREEN_COUNTER
 			while [ $TEMP -gt 0 ]
 			do
-				echo "\$SCREEN_COUNTER before add_dimensions - $SCREEN_COUNTER"
-				add_dimensions "raspberrypi${#SCREEN_COUNTER}_screen_resolution.txt"
+				echo "\$TEMP before add_dimensions - $TEMP"
+				echo "before add dimensions raspberrypi${TEMP}_screen_resolution.txt"
+				add_dimensions "raspberrypi${TEMP}_screen_resolution.txt"
 				TEMP=$(( $TEMP-1 ))
 			done
 			;;
@@ -83,7 +82,6 @@ get_num_tiles()
 			get_num_tiles
 			;;
 		*)
-			echo "Inside default"
 			get_num_tiles
 			;;
 	esac
