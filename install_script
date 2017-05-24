@@ -80,7 +80,6 @@ save_screen_resolution()
 	else
 		HORIZONTAL_LENGTH=$1
 		VERTICAL_HEIGHT=$2
-		make_directory $DIR_PATH
 		echo $HORIZONTAL_LENGTH > ${PI_INDEX}_screen_resolution.txt
 		echo $VERTICAL_HEIGHT >> ${PI_INDEX}_screen_resolution.txt
 	fi
@@ -108,9 +107,7 @@ get_dimensions()
 	get_vertical_height
 
 	echo "Horizontal length = $HORIZONTAL_LENGTH"
-	#echo $HORIZONTAL_LENGTH > ${PI_INDEX}_screen_resolution.txt
 	echo "Vertical height = $VERTICAL_HEIGHT"
-	#echo $VERTICAL_HEIGHT >> ${PI_INDEX}_screen_resolution.txt
 	save_screen_resolution $HORIZONTAL_LENGTH $VERTICAL_HEIGHT
 }
 
@@ -121,7 +118,7 @@ use_xrandr()
 		echo "xrandr not available."
 		get_dimensions
 	else
-		#https://superuser.com/questions/196532/how-do-i-find-out-my-screen-resolution-from-a-shell-script
+		# https://superuser.com/questions/196532/how-do-i-find-out-my-screen-resolution-from-a-shell-script
 		HORIZONTAL_LENGTH=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f1)
 		VERTICAL_HEIGHT=$(xrandr --current | grep '*' | uniq | awk '{print $1}' | cut -d 'x' -f2)
 	fi
@@ -242,21 +239,18 @@ case $REPLY in
 	yes|ye|y)
 		echo -n "Config files will be saved in $DIR_PATH"
 		# Insert option to change directory here in the future if warranted
-		make_directory $DIR_PATH
+		# and apply the following command to make that directory
+		# make_directory $DIR_PATH
 		
-		if [[ ! -f "$DIR_PATH/${PI_INDEX}_screen_resolution.txt" ]]; then
-			# Save screen resolution file if it doesn't exist to the default 
-			# path, or supply DIR_PATH which may have been changed by the 
-			# user previously
-			save_screen_resolution $DIR_PATH
-		else
+		# If screen resolution file exists, rename it to old screen resolution
+		if [[ -f "$DIR_PATH/${PI_INDEX}_screen_resolution.txt" ]]; then
 			echo "Screen resoltion file exists, renaming it to old_*"
 			echo ''
-			echo "PI_INDEX = ${PI_INDEX}"
 			cp $DIR_PATH/${PI_INDEX}_screen_resolution.txt $DIR_PATH/${PI_INDEX}_old_screen_resolution.txt
 			rm $DIR_PATH/${PI_INDEX}_screen_resolution.txt
-			save_screen_resolution $DIR_PATH
+			#save_screen_resolution $DIR_PATH
 		fi
+		save_screen_resolution $DIR_PATH
 		;;
 	no|n)
 		get_dimensions
