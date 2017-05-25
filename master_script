@@ -108,7 +108,7 @@ make_config_file()
 	X_COORDS=0
 	Y_COORDS=0
 	while [ $TEMP -ne $SCREENS_HORIZONTAL ]; do
-		`X${TEMP}=$X_COORDS`
+		`eval X${TEMP}=$X_COORDS`
 		X_COORDS=$(( WIDTH / SCREENS_HORIZONTAL + BAZEL_SIZE + BAZEL_SIZE ))
 		TEMP=$(( $TEMP + 1 ))
 	done
@@ -122,14 +122,20 @@ make_config_file()
 
 
 	END
+
 	TEMP=0
 	while [ $TEMP -lt $SCREEN_COUNTER ]; do
 		cat <<-END >> .piwall	
-		[${SCREEN_COUNTER}bez_wall_$(( TEMP + 1 ))]
-		wall=$SCREEN_COUNTERbez_wall
+		[${SCREEN_COUNTER}bez_$(( TEMP + 1 ))]
+		wall=${SCREEN_COUNTER}bez_wall
 		width=$(( WIDTH / SCREENS_HORIZONTAL - BAZEL_SIZE))
 		height=$(( HEIGHT / SCREENS_VERTICAL - BAZEL_SIZE))
+		x=$X_COORDS
+		y=$Y_COORDS
+
+
 		END
+	X_COORDS=$(( BAZEL_WIDTH + BAZEL_SIZE))
 	TEMP=$(( $TEMP + 1 ))
 	done
 }
