@@ -177,4 +177,4 @@ echo "Total width = $WIDTH"
 echo "Total height = $HEIGHT"
 compensate_bazel
 make_config_file
-echo "\$BAZEL_SIZE=$BAZEL_SIZE"
+`cat .piwall`
