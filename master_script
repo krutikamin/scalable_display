@@ -23,24 +23,26 @@ exiting()
 	echo "*********** Exiting ${FUNCNAME[1]} **************"
 }
 
-add_dimensions()
+add_width()
 {
-	entering
 	echo "Now adding $1's dimensions."
 	local TEMP=`head -n 1 "$1"`
 	WIDTH=$(( $WIDTH + $TEMP ))
 	#WIDTH=$(( $WIDTH+`head -n 1 "$1"` ))
 	echo "\$WIDTH = $WIDTH"
+}
+
+add_height()
+{
+	echo "Now adding $1's dimensions."
 	local TEMP=`tail -n 1 "$1"`
 	HEIGHT=$(( $HEIGHT + $TEMP ))
 	#HEIGHT=$HEIGHT+`tail -n 1 "$1"`
 	echo "\$HEIGHT = $HEIGHT"
-	exiting
 }
 
 check_for_integer()
 {
-	entering
 	local TEMP=$1
 	echo $TEMP | grep "[^0-9]" > /dev/null 2>&1
 	if [ "$?" -eq "0" ]; then
@@ -49,12 +51,10 @@ check_for_integer()
 	else
 		eval $2=$TEMP
 	fi
-	exiting
 }
 
 get_num_tiles()
 {
-	entering
 	echo -n "Please enter the number of tiles: "
 	read 
 	check_for_integer $REPLY SCREEN_COUNTER
@@ -69,13 +69,19 @@ get_num_tiles()
 			echo -n "Please enter number of tiles in vertical direction- "
 			read
 			check_for_integer $REPLY SCREENS_VERTICAL
-			local TEMP=$SCREEN_COUNTER
-			while [ $TEMP -gt 0 ]
+			TEMP=1
+			while [ $TEMP -le $SCREENS_HORIZONTAL ]
 			do
-				echo "\$TEMP before add_dimensions - $TEMP"
-				echo "before add dimensions raspberrypi${TEMP}_screen_resolution.txt"
-				add_dimensions "raspberrypi${TEMP}_screen_resolution.txt"
-				TEMP=$(( $TEMP-1 ))
+				#add_dimensions "raspberrypi${TEMP}_screen_resolution.txt"
+				add_width "raspberrypi${TEMP}_screen_resolution.txt"
+				TEMP=$(( $TEMP + 1 ))
+			done
+
+			TEMP=1
+			while [ $TEMP -lt $SCREEN_COUNTER ]
+			do
+				add_height "raspberrypi${TEMP}_screen_resolution.txt"
+				TEMP=$(( $TEMP + SCREENS_HORIZONTAL ))
 			done
 			;;
 		no|n)
@@ -85,7 +91,6 @@ get_num_tiles()
 			get_num_tiles
 			;;
 	esac
-	exiting
 }
 
 compensate_bazel()
@@ -101,18 +106,12 @@ make_config_file()
 	local REMAINDER=0 
 	local X_COORDS=0
 	local Y_COORDS=0
-	local BAZEL_WIDTH=$(( WIDTH / SCREENS_HORIZONTAL - BAZEL_SIZE))
-	local BAZEL_HEIGHT=$(( HEIGHT / SCREENS_VERTICAL - BAZEL_SIZE))
+	local BAZEL_WIDTH=$(( WIDTH / SCREENS_HORIZONTAL - BAZEL_SIZE)) # Each tile width
+	local BAZEL_HEIGHT=$(( HEIGHT / SCREENS_VERTICAL - BAZEL_SIZE)) # Each tile height
 
-	TEMP=1
 	X_COORDS=0
 	Y_COORDS=0
-	while [ $TEMP -ne $SCREENS_HORIZONTAL ]; do
-		`eval X${TEMP}=$X_COORDS`
-		X_COORDS=$(( WIDTH / SCREENS_HORIZONTAL + BAZEL_SIZE + BAZEL_SIZE ))
-		TEMP=$(( $TEMP + 1 ))
-	done
-	echo "\$X1 = $X1"
+
 	cat <<-END > .piwall
 	[${SCREEN_COUNTER}bez_wall]
 	width=$WIDTH
@@ -124,19 +123,46 @@ make_config_file()
 	END
 
 	TEMP=0
-	while [ $TEMP -lt $SCREEN_COUNTER ]; do
+	while [ $TEMP -lt $SCREENS_HORIZONTAL ]; do
 		cat <<-END >> .piwall	
 		[${SCREEN_COUNTER}bez_$(( TEMP + 1 ))]
 		wall=${SCREEN_COUNTER}bez_wall
-		width=$(( WIDTH / SCREENS_HORIZONTAL - BAZEL_SIZE))
-		height=$(( HEIGHT / SCREENS_VERTICAL - BAZEL_SIZE))
+		width=$BAZEL_WIDTH
+		height=$BAZEL_HEIGHT
 		x=$X_COORDS
 		y=$Y_COORDS
 
 
 		END
-	X_COORDS=$(( BAZEL_WIDTH + BAZEL_SIZE))
+	X_COORDS=$(( X_COORDS + BAZEL_WIDTH + BAZEL_SIZE + BAZEL_SIZE ))
 	TEMP=$(( $TEMP + 1 ))
+	done
+
+	TEMP=$SCREENS_HORIZONTAL
+	X_COORDS=0
+	Y_COORDS=$(( BAZEL_HEIGHT + BAZEL_SIZE + BAZEL_SIZE + BAZEL_SIZE ))
+	while [ $TEMP -lt $SCREEN_COUNTER ]; do
+		cat <<-END >> .piwall	
+		[${SCREEN_COUNTER}bez_$(( TEMP + 1 ))]
+		wall=${SCREEN_COUNTER}bez_wall
+		width=$BAZEL_WIDTH
+		height=$BAZEL_HEIGHT
+		x=$X_COORDS
+		y=$Y_COORDS
+
+
+		END
+	X_COORDS=$(( X_COORDS + BAZEL_WIDTH + BAZEL_SIZE))
+	TEMP=$(( $TEMP + 1 ))
+	done
+	
+	echo "[${SCREEN_COUNTER}bez]" >> .piwall
+	TEMP=0
+	while [ $TEMP -lt $SCREEN_COUNTER ]; do
+		cat <<-END >> .piwall	
+		pi$(( TEMP + 1 ))=${SCREEN_COUNTER}bez_$(( TEMP + 1 ))
+		END
+	TEMP=$(( TEMP + 1 ))
 	done
 }
 		
