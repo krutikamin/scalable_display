@@ -165,7 +165,21 @@ make_config_file()
 	TEMP=$(( TEMP + 1 ))
 	done
 }
-		
+
+show_file()
+{
+	echo
+	echo "=====================Output of $1==================================="
+	cat "$1"
+	echo "=====================End of output==================================="
+	echo
+}
+
+send_config_file()
+{
+	# Use SCP to transfer to the clients
+}
+
 
 
 #############################################################################################################
@@ -177,4 +191,5 @@ echo "Total width = $WIDTH"
 echo "Total height = $HEIGHT"
 compensate_bazel
 make_config_file
-`cat .piwall`
+show_file ".piwall"
+send_config_file
