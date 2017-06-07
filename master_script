@@ -10,7 +10,7 @@ FILES="$DIRPATH"
 BAZEL_SIZE=0
 SCREENS_HORIZONTAL=0
 SCREENS_VERTICAL=0
-
+PRESENT_DIRECTORY=`pwd`
 echo $FILES
 
 entering()
@@ -124,7 +124,7 @@ make_config_file()
 
 	TEMP=0
 	while [ $TEMP -lt $SCREENS_HORIZONTAL ]; do
-		cat <<-END >> .piwall	
+		cat <<-END >> .piwall
 		[${SCREEN_COUNTER}bez_$(( TEMP + 1 ))]
 		wall=${SCREEN_COUNTER}bez_wall
 		width=$BAZEL_WIDTH
@@ -134,15 +134,16 @@ make_config_file()
 
 
 		END
+
 	X_COORDS=$(( X_COORDS + BAZEL_WIDTH + BAZEL_SIZE + BAZEL_SIZE ))
 	TEMP=$(( $TEMP + 1 ))
 	done
 
 	TEMP=$SCREENS_HORIZONTAL
 	X_COORDS=0
-	Y_COORDS=$(( BAZEL_HEIGHT + BAZEL_SIZE + BAZEL_SIZE + BAZEL_SIZE ))
+	Y_COORDS=$(( BAZEL_HEIGHT + BAZEL_SIZE + BAZEL_SIZE ))
 	while [ $TEMP -lt $SCREEN_COUNTER ]; do
-		cat <<-END >> .piwall	
+		cat <<-END >> .piwall
 		[${SCREEN_COUNTER}bez_$(( TEMP + 1 ))]
 		wall=${SCREEN_COUNTER}bez_wall
 		width=$BAZEL_WIDTH
@@ -177,7 +178,12 @@ show_file()
 
 send_config_file()
 {
-	# Use SCP to transfer to the clients
+	# Use SCP to transfer to the clients, the user has to type password for each pi
+	TEMP=0
+	while [ $TEMP -lt $SCREEN_COUNTER ]; do
+		scp $PRESENT_DIRECTORY/.piwall pi@raspberrypi$(( TEMP + 1 )).local:/home/pi
+		TEMP=$(( TEMP + 1 ))
+	done
 }
 
 
@@ -186,6 +192,7 @@ send_config_file()
 ####################################################  MAIN  #################################################
 #############################################################################################################
 
+echo "Present directory = $PRESENT_DIRECTORY"
 get_num_tiles
 echo "Total width = $WIDTH"
 echo "Total height = $HEIGHT"
