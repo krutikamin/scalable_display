@@ -13,6 +13,13 @@ SCREENS_VERTICAL=0
 PRESENT_DIRECTORY=`pwd`
 echo $FILES
 
+line()
+{
+	tput bold
+	echo "----------------------------------------------------------"
+	tput sgr0
+}
+
 entering()
 {
 	echo "*********** Entering ${FUNCNAME[1]} **************"
@@ -25,7 +32,8 @@ exiting()
 
 add_width()
 {
-	echo "Now adding $1's dimensions."
+	line
+	echo "Now adding $1's dimensions to the width."
 	local TEMP=`head -n 1 "$1"`
 	WIDTH=$(( $WIDTH + $TEMP ))
 	#WIDTH=$(( $WIDTH+`head -n 1 "$1"` ))
@@ -34,7 +42,8 @@ add_width()
 
 add_height()
 {
-	echo "Now adding $1's dimensions."
+	line
+	echo "Now adding $1's dimensions to the height."
 	local TEMP=`tail -n 1 "$1"`
 	HEIGHT=$(( $HEIGHT + $TEMP ))
 	#HEIGHT=$HEIGHT+`tail -n 1 "$1"`
@@ -55,17 +64,22 @@ check_for_integer()
 
 get_num_tiles()
 {
+	line
 	echo -n "Please enter the number of tiles: "
 	read 
 	check_for_integer $REPLY SCREEN_COUNTER
+	tput bold
 	echo -n "Please verify that the number of tiles are $SCREEN_COUNTER (yes/no)- "
+	tput sgr0
 	read
 	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
 	case $REPLY in
 		yes|ye|y)
+			line
 			echo -n "Please enter number of tiles in horizontal direction- "
 			read
 			check_for_integer $REPLY SCREENS_HORIZONTAL
+			line
 			echo -n "Please enter number of tiles in vertical direction- "
 			read
 			check_for_integer $REPLY SCREENS_VERTICAL
@@ -95,6 +109,7 @@ get_num_tiles()
 
 compensate_bazel()
 {
+	line
 	echo -n "Please enter approximate bazel size to compensate - "
 	read
 	check_for_integer $REPLY BAZEL_SIZE
@@ -161,20 +176,62 @@ make_config_file()
 show_file()
 {
 	echo
+	tput bold
 	echo "=====================Output of $1==================================="
 	cat "$1"
-	echo "=====================End of output==================================="
+	echo "=====================End of output====================================="
+	tput sgr0
 	echo
 }
 
 send_config_file()
 {
 	# Use SCP to transfer to the clients, the user has to type password for each pi
-	TEMP=0
-	while [ $TEMP -lt $SCREEN_COUNTER ]; do
-		scp $PRESENT_DIRECTORY/.piwall pi@raspberrypi$(( TEMP + 1 )).local:/home/pi
-		TEMP=$(( TEMP + 1 ))
-	done
+	echo -n "Would you like to transfer .piwall file to all $SCREEN_COUNTER clients?(yes/no)- "
+	read
+	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+	case $REPLY in
+		yes|ye|y)
+			TEMP=0
+			while [ $TEMP -lt $SCREEN_COUNTER ]; do
+				scp $PRESENT_DIRECTORY/.piwall pi@raspberrypi$(( TEMP + 1 )).local:/home/pi
+				TEMP=$(( TEMP + 1 ))
+			done
+			;;
+		no|n)
+			;;
+		*)
+			send_config_file
+			;;
+	esac
+}
+
+get_width_and_height()
+{
+	line
+	echo -n "Please enter the total width- "
+	read WIDTH
+	line
+	echo -n "Please enter the total height- "
+	read HEIGHT
+}
+
+continue_prompt()
+{
+	line
+	echo -n "Continue?(yes/no)- "
+	read
+	REPLY=`echo $REPLY | tr "[:upper:]" "[:lower:]"`
+	case $REPLY in
+		yes|ye|y)
+			;;
+		no|n)
+			get_width_and_height
+			;;
+		*)
+			continue_prompt
+			;;
+	esac
 }
 
 
@@ -183,10 +240,13 @@ send_config_file()
 ####################################################  MAIN  #################################################
 #############################################################################################################
 
-echo "Present directory = $PRESENT_DIRECTORY"
 get_num_tiles
+line
+tput bold
 echo "Total width = $WIDTH"
 echo "Total height = $HEIGHT"
+tput sgr0
+continue_prompt
 compensate_bazel
 make_config_file
 show_file ".piwall"
