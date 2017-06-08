@@ -103,11 +103,13 @@ compensate_bazel()
 make_config_file()
 {
 	local TEMP=0
-	local REMAINDER=0 
 	local X_COORDS=0
 	local Y_COORDS=0
 	local BAZEL_WIDTH=$(( WIDTH / SCREENS_HORIZONTAL - BAZEL_SIZE)) # Each tile width
 	local BAZEL_HEIGHT=$(( HEIGHT / SCREENS_VERTICAL - BAZEL_SIZE)) # Each tile height
+	local VERTICAL_INDEX=0
+	local HORIZONTAL_INDEX=0
+	local SCREEN_INDEX=1
 
 	X_COORDS=0
 	Y_COORDS=0
@@ -121,42 +123,31 @@ make_config_file()
 
 
 	END
+	VERTICAL_INDEX=0
+	SCREEN_INDEX=1
+	while [ $VERTICAL_INDEX -lt $SCREENS_VERTICAL ]; do
+		HORIZONTAL_INDEX=0
+		while [ $HORIZONTAL_INDEX -lt $SCREENS_HORIZONTAL ]; do
+			cat <<-END >> .piwall
+			[${SCREEN_COUNTER}bez_${SCREEN_INDEX}]
+			wall=${SCREEN_COUNTER}bez_wall
+			width=$BAZEL_WIDTH
+			height=$BAZEL_HEIGHT
+			x=$X_COORDS
+			y=$Y_COORDS
 
-	TEMP=0
-	while [ $TEMP -lt $SCREENS_HORIZONTAL ]; do
-		cat <<-END >> .piwall
-		[${SCREEN_COUNTER}bez_$(( TEMP + 1 ))]
-		wall=${SCREEN_COUNTER}bez_wall
-		width=$BAZEL_WIDTH
-		height=$BAZEL_HEIGHT
-		x=$X_COORDS
-		y=$Y_COORDS
 
-
-		END
-
-	X_COORDS=$(( X_COORDS + BAZEL_WIDTH + BAZEL_SIZE + BAZEL_SIZE ))
-	TEMP=$(( $TEMP + 1 ))
+			END
+			X_COORDS=$(( X_COORDS + BAZEL_WIDTH + BAZEL_SIZE + BAZEL_SIZE ))
+			HORIZONTAL_INDEX=$(( $HORIZONTAL_INDEX + 1 ))
+			SCREEN_INDEX=$(( SCREEN_INDEX + 1 ))
+		done
+		
+		VERTICAL_INDEX=$(( VERTICAL_INDEX + 1 ))
+		X_COORDS=0
+		Y_COORDS=$(( Y_COORDS + BAZEL_HEIGHT + BAZEL_SIZE + BAZEL_SIZE ))
 	done
 
-	TEMP=$SCREENS_HORIZONTAL
-	X_COORDS=0
-	Y_COORDS=$(( BAZEL_HEIGHT + BAZEL_SIZE + BAZEL_SIZE ))
-	while [ $TEMP -lt $SCREEN_COUNTER ]; do
-		cat <<-END >> .piwall
-		[${SCREEN_COUNTER}bez_$(( TEMP + 1 ))]
-		wall=${SCREEN_COUNTER}bez_wall
-		width=$BAZEL_WIDTH
-		height=$BAZEL_HEIGHT
-		x=$X_COORDS
-		y=$Y_COORDS
-
-
-		END
-	X_COORDS=$(( X_COORDS + BAZEL_WIDTH + BAZEL_SIZE))
-	TEMP=$(( $TEMP + 1 ))
-	done
-	
 	echo "[${SCREEN_COUNTER}bez]" >> .piwall
 	TEMP=0
 	while [ $TEMP -lt $SCREEN_COUNTER ]; do
